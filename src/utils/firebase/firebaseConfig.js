@@ -1,19 +1,13 @@
 import admin from 'firebase-admin';
 
 const initializeFirebase = () => {
-  // التأكد من عدم تهيئة التطبيق أكثر من مرة
   if (admin.apps.length > 0) return admin.app();
 
   try {
-    // التأكد من وجود متغير البيئة في Vercel
-    if (!process.env.FIREBASE_CONFIG) {
-      throw new Error("Missing FIREBASE_CONFIG environment variable");
-    }
-
-    // تحويل النص إلى كائن JSON
+    // قراءة البيانات من Vercel
     const firebaseConfig = JSON.parse(process.env.FIREBASE_CONFIG);
 
-    // خطوة حاسمة: إصلاح رموز السطور الجديدة (\n) ليعمل المفتاح السري أونلاين
+    // إصلاح مشكلة الأسطر في المفتاح السري
     if (firebaseConfig.private_key) {
       firebaseConfig.private_key = firebaseConfig.private_key.replace(/\\n/g, '\n');
     }
@@ -22,7 +16,7 @@ const initializeFirebase = () => {
       credential: admin.credential.cert(firebaseConfig)
     });
   } catch (error) {
-    console.error("Firebase Initialization Error:", error.message);
+    console.error("Firebase Init Error:", error.message);
     return null;
   }
 };

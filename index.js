@@ -12,18 +12,22 @@ const port = process.env.PORT || 5000
 bootstrap(app, express)
 
 // مسار تجريبي للتأكد من حالة السيرفر وقاعدة البيانات
-app.get('/status', async (req, res) => {
-  try {
-    const dbStatus = mongoose.connection.readyState === 1 ? 'Connected' : 'Disconnected';
-    res.json({
-      server: 'Running',
-      database: dbStatus,
-      firebase: admin ? 'Initialized' : 'Failed',
-      message: 'Vaccination App API is Live!'
-    });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+// app.get('/status', async (req, res) => {
+//   try {
+//     const dbStatus = mongoose.connection.readyState === 1 ? 'Connected' : 'Disconnected';
+//     res.json({
+//       server: 'Running',
+//       database: dbStatus,
+//       firebase: admin ? 'Initialized' : 'Failed',
+//       message: 'Vaccination App API is Live!'
+//     });
+//   } catch (err) {
+//     res.status(500).json({ error: err.message });
+//   }
+// });
+
+app.get('/', (req, res) => {
+    res.send('Welcome to Vaccination and Birth Path API!');
 });
 
 

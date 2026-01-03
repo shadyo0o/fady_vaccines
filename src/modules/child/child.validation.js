@@ -19,6 +19,8 @@ export const addChildSchema = {
     })
 };
 
+
+
 export const getChildByIdSchema = {
     params: Joi.object({
         id: objectIdRule.required()
@@ -31,11 +33,18 @@ export const getChildByIdSchema = {
 // src/modules/child/child.validation.js
 export const recordVaccineSchema = {
     body: Joi.object({
-        childId: Joi.string().required(),
-        scheduleId: Joi.string().required(),
-        actualDate: Joi.date().optional(),
-        office: Joi.string().optional(),
-        notes: Joi.string().max(500).optional(), // إضافة هذا السطر للسماح بالملاحظات
+        childId: objectIdRule.required().messages({
+            'string.length': 'معرف الطفل غير صحيح'
+        }),
+        scheduleId: objectIdRule.required().messages({
+            'string.length': 'معرف التطعيم غير صحيح'
+        }),
+        actualDate: Joi.date().less('now').optional().messages({
+            'date.less': 'تاريخ التطعيم لا يمكن أن يكون في المستقبل'
+        }),
+        // التأكد من أن المكتب المسجل فيه التطعيم هو أحد المكاتب المعتمدة لدينا
+        office: Joi.string().valid(...Object.values(officeEnum)).optional(),
+        notes: Joi.string().max(500).optional(),
     }).required()
 };
 

@@ -16,7 +16,7 @@ export const sendNotification = async (token, title, body, data = {}) => {
   };
 
   try {
-    const response = await admin.messaging().send(message);
+    const response = await admin?.messaging().send(message);
     console.log('Successfully sent message:', response);
     return response;
   } catch (error) {

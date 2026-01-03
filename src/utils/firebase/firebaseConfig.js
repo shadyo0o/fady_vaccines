@@ -1,25 +1,34 @@
 import admin from 'firebase-admin';
+import { readFileSync } from 'fs';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
+
+// 1. تحديد مسار المجلد الحالي (لأننا نستخدم ES Modules)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const initializeFirebase = () => {
-  if (admin.apps.length > 0) return admin.app();
+    if (admin.apps.length > 0) return admin.app();
 
-  try {
-    // قراءة البيانات من Vercel
-    const firebaseConfig = JSON.parse(process.env.FIREBASE_CONFIG);
+    try {
+        // 2. تحديد مسار ملف الـ JSON الذي رفعته (firebase-key.json)
+        // المسار: نعود خطوتين للخلف للوصول لمجلد config ثم الملف
+        const serviceAccountPath = join(__dirname, '../../../config/firebase-key.json');
+        
+        // 3. قراءة وتحويل الملف إلى JSON
+        const serviceAccount = JSON.parse(readFileSync(serviceAccountPath, 'utf8'));
 
-    // إصلاح مشكلة الأسطر في المفتاح السري
-    if (firebaseConfig.private_key) {
-      firebaseConfig.private_key = firebaseConfig.private_key.replace(/\\n/g, '\n');
+        console.log("✅ Firebase initialized successfully using local JSON file.");
+        return admin.initializeApp({
+            credential: admin.credential.cert(serviceAccount)
+        });
+
+    } catch (error) {
+        console.error("❌ Firebase Init Error (Local File):", error.message);
+        return null;
     }
-
-    return admin.initializeApp({
-      credential: admin.credential.cert(firebaseConfig)
-    });
-  } catch (error) {
-    console.error("Firebase Init Error:", error.message);
-    return null;
-  }
 };
 
 const firebaseAdmin = initializeFirebase();
+
 export default firebaseAdmin;

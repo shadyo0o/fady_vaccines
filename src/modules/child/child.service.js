@@ -10,15 +10,13 @@ import { getVaccineAdvice } from "../../utils/getVaccineAdvice.js";
 
 // --- دوال مساعدة (Helpers) ---
 
+// --- 1. دوال مساعدة (Helpers) ---
 const daysArabic = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
-
 const formatDateManual = (date) => date.toISOString().split('T')[0];
 
 const getNextWorkingDay = (baseDate, allowedDays) => {
     let date = new Date(baseDate);
-    // إذا لم تكن هناك أيام محددة (مثل حالة الدرن في شبرا)
-    if (!allowedDays || allowedDays.length === 0) return date;
-    
+    if (!allowedDays || allowedDays.length === 0) return null; // لا يوجد أيام عمل
     while (!allowedDays.includes(date.getDay())) {
         date.setDate(date.getDate() + 1);
     }
@@ -26,35 +24,31 @@ const getNextWorkingDay = (baseDate, allowedDays) => {
 };
 
 const getAllowedDays = (officeName, vaccineTitle, dueInMonths) => {
-    // 1. الكبدي B: متاح يومياً في كل المكاتب (أول 24 ساعة)
+    // 1. الكبدي B: متاح يومياً (أول 24 ساعة)
     if (vaccineTitle.includes("التهاب الكبد")) return [0, 1, 2, 3, 4, 5, 6]; 
 
-    // 2. مكتب رعاية شبرا (منع الدرن تماماً)
-    if (officeName === "رعاية_طفل_شبرا_ميدان_الساعة" && vaccineTitle.includes("الدرن")) {
-        return []; 
+    // 2. دمج الصفرية والدرن: يتبعان أيام جلسات المكتب
+    if (vaccineTitle.includes("الدرن") || (dueInMonths === 0 && vaccineTitle.includes("الصفرية"))) {
+        if (officeName === "رعاية_طفل_شبرا_ميدان_الساعة") return []; // ممنوع الدرن في شبرا
+        if (officeName === "صحة_أول_مديرية_الصحة") return [6]; // سبت فقط
+        return [2, 6]; // الهلال، برغش، والافتراضي (سبت وثلاثاء)
     }
 
-    // 3. مكتب الهلال القديم (التقسيم التفصيلي الجديد)
+    // 3. قواعد المكاتب لباقي الشهور
     if (officeName === "الهلال_القديم") {
-        if (dueInMonths === 9 || vaccineTitle.includes("الصفرية")) return [0, 1, 2, 3, 4, 6];
-        if (vaccineTitle.includes("الدرن")) return [2, 6];
-        if ([2, 4, 6].includes(dueInMonths)) return [1, 3, 6]; // سبت، اثنين، أربعاء
-        if ([12, 18].includes(dueInMonths)) return [0, 2, 4]; // أحد، ثلاثاء، خميس
+        if (dueInMonths === 9) return [0, 1, 2, 3, 4, 6];
+        if ([2, 4, 6].includes(dueInMonths)) return [1, 3, 6];
+        if ([12, 18].includes(dueInMonths)) return [0, 2, 4];
     }
-
-    // 4. مكتب صحة أول
     if (officeName === "صحة_أول_مديرية_الصحة") {
-        if (dueInMonths === 12 || dueInMonths === 18 || vaccineTitle.includes("الدرن")) return [6];
+        if ([12, 18].includes(dueInMonths)) return [6];
         return [2, 4, 6];
     }
-
-    // 5. مكتب عمارة برغش
-    if (officeName === "عمارة_برغش") {
-        if (vaccineTitle.includes("الدرن")) return [2, 6];
-        return [0, 1, 2, 3, 4, 6];
+    if (officeName === "عمارة_برغش" || officeName === "رعاية_طفل_شبرا_ميدان_الساعة") {
+        return [0, 1, 2, 3, 4, 6]; // كل الأيام ما عدا الجمعة
     }
 
-    return [2, 6]; // الافتراضي لباقي المكاتب (سبت وثلاثاء)
+    return [2, 6]; 
 };
 
 /** * --- Main Service Functions (الدوال الأساسية) --- 
@@ -113,19 +107,19 @@ export const getDueVaccines = async (req, res, next) => {
 
         const result = { info: [], taken: [], overdue: [], nextVaccine: null, upcoming: [] };
 
-        // --- أولاً: إضافة معلومات الغدة والسمع (Static Info) ---
+        // --- حساب موعد "زيارة التجمع" (الغدة والسمع) ---
         const ghoddaBaseDate = new Date(child.birthDate);
-        ghoddaBaseDate.setDate(ghoddaBaseDate.getDate() + 3); // بعد 72 ساعة
-        const ghoddaDate = getNextWorkingDay(ghoddaBaseDate, [2, 6]); // سبت وثلاثاء
+        ghoddaBaseDate.setDate(ghoddaBaseDate.getDate() + 3); 
+        const allowedForGhodda = (officeName === "صحة_أول_مديرية_الصحة") ? [6] : [2, 6];
+        const ghoddaDate = getNextWorkingDay(ghoddaBaseDate, allowedForGhodda);
 
         result.info.push({
             title: "تحليل الغدة الدرقية واختبار السمع",
             expectedDate: formatDateManual(ghoddaDate),
             dayName: daysArabic[ghoddaDate.getDay()],
-            advice: "يتم التحليل بعد 72 ساعة من الولادة وحتى أسبوع، يومي السبت والثلاثاء فقط بجميع المكاتب."
+            advice: "يتم التحليل بعد 72 ساعة من الولادة. احضر أصل إخطار الولادة وبطاقة الأم."
         });
 
-        // --- ثانياً: معالجة جدول التطعيمات ---
         let foundNext = false;
 
         for (const schedule of allSchedules) {
@@ -136,45 +130,46 @@ export const getDueVaccines = async (req, res, next) => {
                 const adminRecord = administered.find(r => r.vaccineSchedule.toString() === schedule._id.toString());
                 finalDate = new Date(adminRecord.administeredDate);
             } else {
-                let baseDate = new Date(child.birthDate.getFullYear(), child.birthDate.getMonth() + schedule.dueInMonths, child.birthDate.getDate());
-                
-                // حالة الكبدي B (أول 24 ساعة)
                 if (schedule.dueInMonths === 0 && schedule.title.includes("التهاب الكبد")) {
                     finalDate = new Date(child.birthDate);
-                } else {
+                } 
+                else if (schedule.dueInMonths === 0 && (schedule.title.includes("الدرن") || schedule.title.includes("الصفرية"))) {
+                    finalDate = ghoddaDate; // تجميع مع الغدة
+                } 
+                else {
+                    let baseDate = new Date(child.birthDate.getFullYear(), child.birthDate.getMonth() + schedule.dueInMonths, child.birthDate.getDate());
                     const allowed = getAllowedDays(officeName, schedule.title, schedule.dueInMonths);
                     finalDate = getNextWorkingDay(baseDate, allowed);
                 }
             }
 
-            const data = {
-                ...schedule._doc,
-                expectedDate: formatDateManual(finalDate),
-                dayName: daysArabic[finalDate.getDay()],
-                isTaken,
-                advice: ""
-            };
+            if (!finalDate && officeName === "رعاية_طفل_شبرا_ميدان_الساعة" && schedule.title.includes("الدرن")) {
+                // حالة خاصة لشبرا: الدرن لا يظهر له تاريخ
+            } else {
+                const adviceData = getVaccineAdvice(schedule.dueInMonths);
+                const data = {
+                    ...schedule._doc,
+                    expectedDate: finalDate ? formatDateManual(finalDate) : "غير محدد",
+                    dayName: finalDate ? daysArabic[finalDate.getDay()] : "",
+                    isTaken,
+                    advice: adviceData.medical || ""
+                };
 
-            // إضافة نصيحة خاصة بمكتب شبرا والدرن
-            if (officeName === "رعاية_طفل_شبرا_ميدان_الساعة" && schedule.title.includes("الدرن")) {
-                data.advice = "⚠️ تطعيم الدرن غير متوفر في رعاية شبرا، يرجى التوجه لمكتب الهلال أو برغش يومي السبت أو الثلاثاء.";
-            }
+                // إضافة تحذير شبرا
+                if (officeName === "رعاية_طفل_شبرا_ميدان_الساعة" && schedule.title.includes("الدرن")) {
+                    data.advice = "⚠️ الدرن غير متوفر في شبرا، توجه للهلال أو برغش يوم السبت أو الثلاثاء.";
+                }
 
-            if (isTaken) result.taken.push(data);
-            else {
-                if (finalDate < today) result.overdue.push(data);
-                else if (!foundNext) { result.nextVaccine = data; foundNext = true; }
-                else result.upcoming.push(data);
+                if (isTaken) result.taken.push(data);
+                else {
+                    if (finalDate && finalDate < today) result.overdue.push(data);
+                    else if (!foundNext) { result.nextVaccine = data; foundNext = true; }
+                    else result.upcoming.push(data);
+                }
             }
         }
 
-        res.status(200).json({ 
-            message: "Success", 
-            childName: child.name, 
-            currentOffice: officeName, 
-            results: result 
-        });
-
+        res.status(200).json({ message: "Success", childName: child.name, currentOffice: officeName, results: result });
     } catch (error) {
         res.status(500).json({ message: "Error", error: error.message });
     }

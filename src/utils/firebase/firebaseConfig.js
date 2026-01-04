@@ -67,26 +67,52 @@
 
 
 
+// import admin from 'firebase-admin';
+
+// const initializeFirebase = () => {
+//     if (admin.apps.length > 0) return admin.app();
+
+//     try {
+//         let serviceAccount;
+//         // القراءة من المتغير البيئي الذي وضعناه في Koyeb
+//         if (process.env.FIREBASE_CONFIG) {
+//             serviceAccount = JSON.parse(process.env.FIREBASE_CONFIG);
+//         } else {
+//             // هذا للمكان المحلي فقط
+//             serviceAccount = './config/firebase-key.json'; 
+//         }
+
+//         return admin.initializeApp({
+//             credential: admin.credential.cert(serviceAccount)
+//         });
+//     } catch (error) {
+//         console.error("Firebase Init Error:", error.message);
+//         return null;
+//     }
+// };
+
+// const firebaseAdmin = initializeFirebase();
+// export default firebaseAdmin;
+
+
 import admin from 'firebase-admin';
 
 const initializeFirebase = () => {
     if (admin.apps.length > 0) return admin.app();
-
     try {
         let serviceAccount;
-        // القراءة من المتغير البيئي الذي وضعناه في Koyeb
         if (process.env.FIREBASE_CONFIG) {
+            // القراءة من المتغير البيئي في Koyeb
             serviceAccount = JSON.parse(process.env.FIREBASE_CONFIG);
         } else {
-            // هذا للمكان المحلي فقط
+            // القراءة المحلية لجهازك فقط
             serviceAccount = './config/firebase-key.json'; 
         }
-
         return admin.initializeApp({
             credential: admin.credential.cert(serviceAccount)
         });
     } catch (error) {
-        console.error("Firebase Init Error:", error.message);
+        console.error("❌ Firebase Init Error:", error.message);
         return null;
     }
 };

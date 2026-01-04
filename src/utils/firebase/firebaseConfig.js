@@ -105,19 +105,24 @@ const initializeFirebase = () => {
 
     try {
         let serviceAccount;
-        // التحقق إذا كنا على السيرفر (Railway)
+
+        // 1. الأولوية القصوى: القراءة من المتغير البيئي (للسيرفر)
         if (process.env.FIREBASE_CONFIG) {
+            // تحويل النص المخزن في المتغير إلى JSON Object
             serviceAccount = JSON.parse(process.env.FIREBASE_CONFIG);
-        } else {
-            // التحقق محلياً على جهازك
-            serviceAccount = './config/firebase-key.json'; 
+            console.log("✅ Firebase initialized via Environment Variable");
+        } 
+        // 2. إذا لم يجد المتغير، يحاول القراءة من الملف (للجهاز الشخصي)
+        else {
+            serviceAccount = './src/config/firebase-key.json'; 
+            console.log("🏠 Firebase initialized via local file");
         }
 
         return admin.initializeApp({
             credential: admin.credential.cert(serviceAccount)
         });
     } catch (error) {
-        console.error("❌ Firebase Init Error:", error.message);
+        console.error("❌ Firebase Init Error Detail:", error.message);
         return null;
     }
 };

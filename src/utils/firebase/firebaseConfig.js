@@ -101,11 +101,11 @@ const initializeFirebase = () => {
     if (admin.apps.length > 0) return admin.app();
     try {
         let serviceAccount;
+        // القراءة من المتغير البيئي FIREBASE_CONFIG الموجود في Koyeb
         if (process.env.FIREBASE_CONFIG) {
-            // القراءة من المتغير البيئي في Koyeb
             serviceAccount = JSON.parse(process.env.FIREBASE_CONFIG);
         } else {
-            // القراءة المحلية لجهازك فقط
+            // مسار احتياطي للجهاز المحلي فقط
             serviceAccount = './config/firebase-key.json'; 
         }
         return admin.initializeApp({

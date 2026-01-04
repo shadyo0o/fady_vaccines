@@ -95,19 +95,24 @@
 // export default firebaseAdmin;
 
 
+
+
+
 import admin from 'firebase-admin';
 
 const initializeFirebase = () => {
     if (admin.apps.length > 0) return admin.app();
+
     try {
         let serviceAccount;
-        // القراءة من المتغير البيئي FIREBASE_CONFIG الموجود في Koyeb
+        // التحقق إذا كنا على السيرفر (Railway)
         if (process.env.FIREBASE_CONFIG) {
             serviceAccount = JSON.parse(process.env.FIREBASE_CONFIG);
         } else {
-            // مسار احتياطي للجهاز المحلي فقط
+            // التحقق محلياً على جهازك
             serviceAccount = './config/firebase-key.json'; 
         }
+
         return admin.initializeApp({
             credential: admin.credential.cert(serviceAccount)
         });

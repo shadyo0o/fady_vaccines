@@ -12,9 +12,9 @@ export const signUp = async (req, res) => {
         return res.status(400).json({message:"Email already exists"});
     }
 
-    const hashedPassword = await bcrypt.hash(password, 12);
+    const hashedPassword = await bcrypt.hash(password, process.env.SALT_ROUNDS);
     const otp = randomUUID()
-    const hashOtp=await bcrypt.hash(otp, 12);
+    const hashOtp=await bcrypt.hash(otp, process.env.SALT_ROUNDS);
     eventEmitter.emit("confirmEmail",{email:email,otp:otp});
     const user = await userModel.create({name,password:hashedPassword,otp:hashOtp,email,phone,gender});
     res.status(201).json({ message: "User created successfully and otp sent successfully go to confirm email" });

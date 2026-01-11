@@ -376,6 +376,7 @@ import childModel, { officeEnum } from "../../DB/models/Child/Child.js";
 import administeredVaccineModel from "../../DB/models/AdministeredVaccine/AdministeredVaccine.js";
 import VaccineScheduleModel from "../../DB/models/VaccineSchedule/VaccineSchedule.js";
 import announcementModel from "../../DB/models/Announcement/Announcement.js";
+import informationModel from "../../DB/models/Information/Information.js";
 import { calculateNextDoseDate } from "../../utils/vaccineCalculations.js";
 import { getVaccineAdvice } from "../../utils/getVaccineAdvice.js";
 
@@ -704,6 +705,45 @@ export const createAnnouncement = async (req, res) => {
             title, content, type, startDate: new Date(startDate), endDate: new Date(endDate), isActive: true
         });
         res.status(201).json({ message: "تم الإنشاء", announcement });
+    } catch (error) {
+        res.status(500).json({ message: "Error", error: error.message });
+    }
+};
+
+// جلب النصائح المجمعة (تطعيمات + طبية) للطفل
+export const getChildAdvice = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const child = await childModel.findById(id);
+        if (!child) return res.status(404).json({ message: "الطفل غير موجود" });
+
+        const today = new Date();
+        const birthDate = new Date(child.birthDate);
+        const ageInMilliseconds = today - birthDate;
+        const ageInMonths = Math.floor(ageInMilliseconds / (1000 * 60 * 60 * 24 * 30.44));
+
+        // 1. نصائح التطعيمات (Vaccine Advice)
+        const adviceMilestones = [18, 12, 9, 6, 4, 2, 0];
+        const currentMilestone = adviceMilestones.find(m => ageInMonths >= m) || 0;
+        const vaccineAdvice = getVaccineAdvice(currentMilestone);
+
+        // 2. النصائح الطبية العامة (Medical Advice)
+        const medicalTips = await informationModel.find({
+            isActive: true,
+            minAgeMonths: { $lte: ageInMonths },
+            maxAgeMonths: { $gte: ageInMonths }
+        }).sort({ minAgeMonths: -1 });
+
+        res.status(200).json({
+            message: "Success",
+            childName: child.name,
+            ageInMonths: ageInMonths,
+            vaccineAdvice: {
+                milestone: currentMilestone,
+                ...vaccineAdvice
+            },
+            medicalTips: medicalTips
+        });
     } catch (error) {
         res.status(500).json({ message: "Error", error: error.message });
     }

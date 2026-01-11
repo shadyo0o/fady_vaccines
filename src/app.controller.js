@@ -10,6 +10,7 @@ import userRouter from "./modules/user/user.controller.js"
 import childRouter from "./modules/child/child.controller.js"
 import { seedDatabase } from "../seeder.js"
 import infoRouter from "./modules/information/information.controller.js";
+import dashboardRouter from "./modules/dashboard/dashboard.controller.js";
 
 // إعداد حارس البوابة (Rate Limiter)
 const limiter = rateLimit({
@@ -41,7 +42,8 @@ const bootstrap = async (app, express) => {
     // الراوتس (Routes)
     app.use("/users", userRouter);
     app.use("/childs", childRouter);
-     app.use("/information", infoRouter);
+    app.use("/information", infoRouter);
+    app.use("/dashboard", dashboardRouter);
 
     app.get('/', (req, res) => res.json({ message: 'Fady Vaccines API is running...' }));
 

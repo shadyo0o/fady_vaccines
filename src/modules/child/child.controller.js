@@ -33,4 +33,7 @@ childRouter.get("/getNextVaccine/:id", authentication(), validation(childVal.get
 // جلب التنبيهات النشطة
 childRouter.get("/announcements", childService.getActiveAnnouncements);
 
+// جلب النصائح المجمعة للطفل
+childRouter.get("/getAdvice/:id", authentication(), validation(childVal.getChildByIdSchema), childService.getChildAdvice);
+
 export default childRouter;

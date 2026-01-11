@@ -521,7 +521,11 @@ export const getDueVaccines = async (req, res, next) => {
                 expectedDate: finalDate ? formatDateManual(finalDate) : "غير متاح بهذا المكتب",
                 dayName: finalDate ? daysArabic[finalDate.getDay()] : "راجع مكتب آخر",
                 isTaken,
-                advice: adviceData.medical || ""
+                advice: adviceData.medical || "",
+                nutrition: adviceData.nutrition || "",
+                tips: adviceData.tips || "",
+                documents: adviceData.documents || "",
+                important: adviceData.important || ""
             };
 
             // إضافة تحذير الدرن الخاص بشبرا
@@ -561,13 +565,17 @@ export const getNextVaccineDate = async (req, res, next) => {
         const ghoddaDate = getNextWorkingDay(ghoddaBase, [2, 6]);
 
         if (ghoddaDate && ghoddaDate >= today) {
+            const adviceData = getVaccineAdvice(0);
             return res.status(200).json({
                 message: "Success",
                 nextTask: {
                     title: "تحليل الغدة والسمع",
                     date: formatDateManual(ghoddaDate),
                     day: daysArabic[ghoddaDate.getDay()],
-                    advice: "بعد 72 ساعة من الولادة (سبت وثلاثاء فقط)"
+                    advice: "بعد 72 ساعة من الولادة (سبت وثلاثاء فقط). " + (adviceData.medical || ""),
+                    nutrition: adviceData.nutrition || "",
+                    documents: adviceData.documents || "",
+                    important: adviceData.important || ""
                 }
             });
         }
@@ -584,6 +592,7 @@ export const getNextVaccineDate = async (req, res, next) => {
             const finalDate = getNextWorkingDay(baseDate, allowed);
 
             if (finalDate && finalDate >= today) {
+                const adviceData = getVaccineAdvice(schedule.dueInMonths);
                 return res.status(200).json({
                     message: "Success",
                     nextVaccine: {
@@ -592,7 +601,12 @@ export const getNextVaccineDate = async (req, res, next) => {
                         day: daysArabic[finalDate.getDay()],
                         office: officeName.replace(/_/g, ' '),
                         warning: (officeName === "رعاية_طفل_شبرا_ميدان_الساعة" && schedule.title.includes("الدرن")) 
-                                 ? "⚠️ الدرن غير متاح في شبرا" : ""
+                                 ? "⚠️ الدرن غير متاح في شبرا" : "",
+                        advice: adviceData.medical || "",
+                        nutrition: adviceData.nutrition || "",
+                        tips: adviceData.tips || "",
+                        documents: adviceData.documents || "",
+                        important: adviceData.important || ""
                     }
                 });
             }

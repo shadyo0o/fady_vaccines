@@ -35,18 +35,20 @@
 
 
 
+import nodemailer from "nodemailer"; // هذا هو السطر الناقص الذي يسبب الخطأ الحالي
+
 export const confirmation = async ({ to, html }) => {
   const transporter = nodemailer.createTransport({
     service: "gmail",
-    host: "smtp.gmail.com", // إضافة الـ host صراحة
-    port: 587,
-    secure: false, 
+    host: "smtp.gmail.com",
+    port: 465,
+    secure: true, 
     auth: {
       user: process.env.EMAIL,
-      pass: process.env.EMAIL_PASSWORD, // تأكد أنه App Password مكون من 16 حرفاً
+      pass: process.env.EMAIL_PASSWORD, // تأكد من أنه App Password (16 حرف)
     },
     tls: {
-      rejectUnauthorized: false // هامة جداً لبيئة الـ Production (Railway)
+      rejectUnauthorized: false 
     }
   });
 
@@ -60,7 +62,7 @@ export const confirmation = async ({ to, html }) => {
     });
     return info.accepted.length > 0;
   } catch (error) {
-    console.error("Nodemailer Error: ", error); // طباعة الخطأ لرؤيته في Railway Logs
+    console.error("Nodemailer Error: ", error); 
     return false;
   }
 };

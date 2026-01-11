@@ -2,7 +2,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import  userModel, { providerEnum }  from '../../DB/models/User/User.model.js';
 import { randomUUID } from 'crypto';
-import { eventEmitter } from '../../utils/Events/confirmEmail.js';
+// import { eventEmitter } from '../../utils/Events/confirmEmail.js';
 import { OAuth2Client } from 'google-auth-library';
 // export const signUp = async (req, res) => {
 //     // Your sign-up logic here
@@ -30,22 +30,22 @@ export const signUp = async (req, res) => {
 
     // 2. تشفير البيانات وتجهيز الـ OTP
     const hashedPassword = await bcrypt.hash(password, Number(process.env.SALT_ROUNDS));
-    const otp = Math.floor(100000 + Math.random() * 900000).toString(); // OTP أرقام أفضل (6 أرقام)
-    const hashOtp = await bcrypt.hash(otp, Number(process.env.SALT_ROUNDS));
+    // const otp = Math.floor(100000 + Math.random() * 900000).toString(); // OTP أرقام أفضل (6 أرقام)
+    // const hashOtp = await bcrypt.hash(otp, Number(process.env.SALT_ROUNDS));
 
     try {
         // 3. إنشاء المستخدم أولاً
         const user = await userModel.create({ 
             name, 
             password: hashedPassword, 
-            otp: hashOtp, 
+            // otp: hashOtp, 
             email, 
             phone, 
             gender 
         });
 
         // 4. إرسال الإيميل بعد نجاح الحفظ في قاعدة البيانات
-        eventEmitter.emit("confirmEmail", { email: email, otp: otp });
+        // eventEmitter.emit("confirmEmail", { email: email, otp: otp });
 
         res.status(201).json({ 
             message: "تم إنشاء الحساب بنجاح، يرجى فحص بريدك الإلكتروني لتفعيل الحساب" 
@@ -55,17 +55,17 @@ export const signUp = async (req, res) => {
     }
 }
 
-export const confirmEmail = async (req, res) => {
-    const {email,otp}=req.body;
-    const user = await userModel.findOne({email,otp:{$exists:true},confirmed:false});
-    if(!user || ! await bcrypt.compare(otp ,user.otp )){
-        return res.status(400).json({message:"Invalid email or otp"});
-    }
-    const updated = await userModel.findOneAndUpdate({email},
-        {$unset:{otp:""} , confirmed:true}, { new: true, select: '-password -otp' }
-    )
-    res.status(200).json({message : `email confirmed successfully` , user: updated  })
-}
+// export const confirmEmail = async (req, res) => {
+//     const {email,otp}=req.body;
+//     const user = await userModel.findOne({email,otp:{$exists:true},confirmed:false});
+//     if(!user || ! await bcrypt.compare(otp ,user.otp )){
+//         return res.status(400).json({message:"Invalid email or otp"});
+//     }
+//     const updated = await userModel.findOneAndUpdate({email},
+//         {$unset:{otp:""} , confirmed:true}, { new: true, select: '-password -otp' }
+//     )
+//     res.status(200).json({message : `email confirmed successfully` , user: updated  })
+// }
 
 export const signIn = async (req, res) => {
     // Your sign-in logic here

@@ -14,7 +14,7 @@ const UserSchema = new mongoose.Schema({
     email: { type: String, required: true, unique: true },
     password: { type: String, required: function(){return this.provider == providerEnum.system?true:false} },
     phone: { type: String , required:function(){return this.provider == providerEnum.system?true:false}  },
-    otp: { type: String },
+    // otp: { type: String },
     confirmed: { type: Boolean, default: false },
     gender:{type:String,enum:Object.values(genderEnum),default:genderEnum.female},
     provider:{type:String,enum:Object.values(providerEnum),default:providerEnum.system},

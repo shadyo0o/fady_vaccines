@@ -1,13 +1,13 @@
 import { Router } from "express";
-import {updateFcmToken, confirmEmail, getProfile, loginWithGoogle, refreshToken, signIn, signUp } from "./user.service.js";
+import {updateFcmToken, getProfile, loginWithGoogle, refreshToken, signIn, signUp } from "./user.service.js";
 import { authentication, tokenType } from "../../middlewares/authentication.js";
 import { validation } from "../../middlewares/validation.js";
-import { confirmEmailSchema, loginWithGoogleSchema, signInSchema, signUpSchema } from "./user.validation.js";
+import { loginWithGoogleSchema, signInSchema, signUpSchema } from "./user.validation.js";
 
 const userRouter = Router()
 
 userRouter.post("/signup",validation(signUpSchema),signUp)
-userRouter.post("/confirm",validation(confirmEmailSchema),confirmEmail)
+// userRouter.post("/confirm",validation(confirmEmailSchema),confirmEmail)
 userRouter.post("/signin",validation(signInSchema),signIn)
 userRouter.get('/profile', authentication(),getProfile)
 userRouter.get('/refreshToken',authentication(tokenType.refresh),refreshToken)

@@ -4,20 +4,55 @@ import  userModel, { providerEnum }  from '../../DB/models/User/User.model.js';
 import { randomUUID } from 'crypto';
 import { eventEmitter } from '../../utils/Events/confirmEmail.js';
 import { OAuth2Client } from 'google-auth-library';
-export const signUp = async (req, res) => {
-    // Your sign-up logic here
-    const {name,password,email,phone,gender}=req.body;
+// export const signUp = async (req, res) => {
+//     // Your sign-up logic here
+//     const {name,password,email,phone,gender}=req.body;
 
-    if(await userModel.findOne({email})){
-        return res.status(400).json({message:"Email already exists"});
+//     if(await userModel.findOne({email})){
+//         return res.status(400).json({message:"Email already exists"});
+//     }
+
+//     const hashedPassword = await bcrypt.hash(password, Number(process.env.SALT_ROUNDS));
+//     const otp = randomUUID()
+//     const hashOtp=await bcrypt.hash(otp,Number(process.env.SALT_ROUNDS));
+//     eventEmitter.emit("confirmEmail",{email:email,otp:otp});
+//     const user = await userModel.create({name,password:hashedPassword,otp:hashOtp,email,phone,gender});
+//     res.status(201).json({ message: "User created successfully and otp sent successfully go to confirm email" });
+// }
+
+export const signUp = async (req, res) => {
+    const { name, password, email, phone, gender } = req.body;
+
+    // 1. التحقق من وجود الحساب
+    if (await userModel.findOne({ email })) {
+        return res.status(400).json({ message: "البريد الإلكتروني مسجل بالفعل" });
     }
 
+    // 2. تشفير البيانات وتجهيز الـ OTP
     const hashedPassword = await bcrypt.hash(password, Number(process.env.SALT_ROUNDS));
-    const otp = randomUUID()
-    const hashOtp=await bcrypt.hash(otp,Number(process.env.SALT_ROUNDS));
-    eventEmitter.emit("confirmEmail",{email:email,otp:otp});
-    const user = await userModel.create({name,password:hashedPassword,otp:hashOtp,email,phone,gender});
-    res.status(201).json({ message: "User created successfully and otp sent successfully go to confirm email" });
+    const otp = Math.floor(100000 + Math.random() * 900000).toString(); // OTP أرقام أفضل (6 أرقام)
+    const hashOtp = await bcrypt.hash(otp, Number(process.env.SALT_ROUNDS));
+
+    try {
+        // 3. إنشاء المستخدم أولاً
+        const user = await userModel.create({ 
+            name, 
+            password: hashedPassword, 
+            otp: hashOtp, 
+            email, 
+            phone, 
+            gender 
+        });
+
+        // 4. إرسال الإيميل بعد نجاح الحفظ في قاعدة البيانات
+        eventEmitter.emit("confirmEmail", { email: email, otp: otp });
+
+        res.status(201).json({ 
+            message: "تم إنشاء الحساب بنجاح، يرجى فحص بريدك الإلكتروني لتفعيل الحساب" 
+        });
+    } catch (error) {
+        res.status(500).json({ message: "حدث خطأ في السيرفر", error: error.message });
+    }
 }
 
 export const confirmEmail = async (req, res) => {

@@ -39,8 +39,8 @@ export const confirmation = async ({ to, html }) => {
   const transporter = nodemailer.createTransport({
     service: "gmail",
     host: "smtp.gmail.com", // إضافة الـ host صراحة
-    port: 465,
-    secure: true, 
+    port: 587,
+    secure: false, 
     auth: {
       user: process.env.EMAIL,
       pass: process.env.EMAIL_PASSWORD, // تأكد أنه App Password مكون من 16 حرفاً
